@@ -70,23 +70,23 @@ class Client
      */
     public function execute(IRequest $request)
     {
-        // 获取请求的操作名称
         $action = $request->getAction();
-        // 获取请求的特定参数
         $reqParams = $request->getParams();
-        // 获取通用的公共参数
         $pubParams = $this->getPublicParams();
-        // 合并公共参数、操作名称和请求参数,为发送请求做准备
-        $params = array_merge($pubParams, ['Action' => $action], $reqParams);
-        // 生成请求的签名,并添加到参数数组中
+        $params = array_merge(
+            $pubParams,
+            ['Action' => $action],
+            $reqParams
+        );
+        // 签名
         $params['Signature'] = $this->generateSign($params);
-        // 使用cURL发送请求,并获取响应
-        $resp = $this->curl($this->api_uri, $params);
-        // 解析JSON格式的响应,并转换为关联数组
+        // 请求数据
+        $resp = $this->curl(
+            $this->api_uri,
+            $params
+        );
         $arr = json_decode($resp, true);
-        // 将响应数组中的键的大小写转换为统一格式,并返回
-        $result = array_map('array_change_key_case', $arr);
-        return $result;
+        return $arr;
     }
 
     /**
@@ -105,18 +105,13 @@ class Client
      */
     protected function generateSign($params = [])
     {
-        // 对参数数组按照键名升序排序
         ksort($params);
-        // 构建编码后的参数字符串数组
         $arr = [];
         foreach ($params as $k => $v) {
             $arr[] = $this->percentEncode($k) . '=' . $this->percentEncode($v);
         }
-        // 将编码后的参数字符串数组拼接成查询字符串
         $queryStr = implode('&', $arr);
-        // 构造待签名的字符串
         $strToSign = $this->httpMethod . '&%2F&' . $this->percentEncode($queryStr);
-        // 计算签名并返回
         return base64_encode(hash_hmac('sha1', $strToSign, $this->config['accessKeySecret'] . '&', true));
     }
 
@@ -134,15 +129,10 @@ class Client
      */
     protected function percentEncode($str)
     {
-        // 使用urlencode对字符串进行基本编码
         $res = urlencode($str);
-        // 将加号(+)转为百分号加20(%20)
         $res = preg_replace('/\+/', '%20', $res);
-        // 将星号(*)转为百分号加2A(%2A)
         $res = preg_replace('/\*/', '%2A', $res);
-        // 将波浪线(~)转为百分号加7E(%7E)
         $res = preg_replace('/%7E/', '~', $res);
-        // 返回处理后的编码字符串
         return $res;
     }
 
@@ -154,23 +144,14 @@ class Client
      */
     protected function getPublicParams()
     {
-        // 返回一个数组,包含所有公共请求参数
         return [
-            // AccessKeyId 是访问密钥ID,用于身份验证
             'AccessKeyId' => $this->config['accessKeyId'],
-            // 时间戳,用于防止重放攻击
             'Timestamp' => $this->getTimestamp(),
-            // 返回结果的格式,如 JSON 或 XML
             'Format' => $this->format,
-            // 签名方法,目前只支持 HMAC-SHA1
             'SignatureMethod' => $this->signatureMethod,
-            // 签名版本,目前版本是1.0
             'SignatureVersion' => '1.0',
-            // 签名唯一随机数,用于防止网络重放攻击
             'SignatureNonce' => uniqid(),
-            // API的版本号
             'Version' => '2017-05-25',
-            // 服务的区域ID,指定服务所在的地域
             'RegionId' => 'cn-hangzhou',
         ];
     }
@@ -185,15 +166,10 @@ class Client
      */
     protected function getTimestamp()
     {
-        // 获取当前默认时区,以便在设置GMT时区后恢复
         $timezone = date_default_timezone_get();
-        // 将默认时区设置为GMT,以获取GMT时间
         date_default_timezone_set('GMT');
-        // 生成符合ISO 8601标准的GMT时间戳
         $timestamp = date('Y-m-d\TH:i:s\Z');
-        // 恢复先前的默认时区设置
         date_default_timezone_set($timezone);
-        // 返回GMT时间戳字符串
         return $timestamp;
     }
 
@@ -209,38 +185,27 @@ class Client
      */
     protected function curl($url, $postFields = null)
     {
-        // 初始化cURL会话
         $ch = curl_init();
-        // 设置cURL选项:请求URL
         curl_setopt($ch, CURLOPT_URL, $url);
-        // 设置cURL不立即失败,而是返回错误代码
         curl_setopt($ch, CURLOPT_FAILONERROR, false);
-        // 设置cURL选项:返回响应而不是直接输出
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        // 如果URL是HTTPS,禁用SSL验证以简化测试
+        // https请求
         if (strlen($url) > 5 && strtolower(substr($url, 0, 5)) == 'https') {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         }
-        // 如果提供了POST字段,准备POST数据
         if (is_array($postFields) && 0 < count($postFields)) {
-            // 构建POST数据字符串
             $postBodyString = '';
             foreach ($postFields as $k => $v) {
                 $postBodyString .= '$k=' . urlencode($v) . '&';
             }
             unset($k, $v);
-            // 设置请求为POST方式
             curl_setopt($ch, CURLOPT_POST, true);
-            // 设置HTTP头部信息,指定POST数据的Content-Type
             $header = array('content-type: application/x-www-form-urlencoded; charset=UTF-8');
             curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-            // 设置POST数据
             curl_setopt($ch, CURLOPT_POSTFIELDS, substr($postBodyString, 0, -1));
         }
-        // 执行cURL请求并获取响应
         $reponse = curl_exec($ch);
-        // 关闭cURL会话并返回响应
         return $reponse;
     }
 }
