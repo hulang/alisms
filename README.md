@@ -30,46 +30,5 @@ if (!function_exists('CreateSmsClient')) {
      * @return array 发送短信的结果,包含状态码、消息和数据
      */
     function CreateSmsClient($keyId = '', $keySecret = '', $phone = '', $templateCode = '', $templateParam = [], $signName = '')
-    {
-        // 初始化返回结果数组
-        $result = [];
-        $result['code'] = 0;
-        $result['msg'] = '';
-        $result['data'] = [];
-        try {
-            // 配置阿里云短信服务的访问密钥
-            $config = [
-                'accessKeyId' => $keyId,
-                'accessKeySecret' => $keySecret,
-            ];
-            // 创建短信客户端
-            $client = new Client($config);
-            // 创建发送短信的请求对象
-            $sendSms = new SendSms;
-            // 设置短信发送的手机号码
-            $sendSms->setPhoneNumbers($phone);
-            // 设置短信签名
-            $sendSms->setSignName($signName);
-            // 设置短信模板代码
-            $sendSms->setTemplateCode($templateCode);
-            // 如果模板参数不为空,则设置模板参数
-            if (!empty($templateParam)) {
-                $sendSms->setTemplateParam($templateParam);
-            }
-            // 执行发送短信的操作,获取发送结果
-            $arr = $client->execute($sendSms);
-            // 如果发送成功,更新返回结果数组
-            if ($arr['code'] == 'ok') {
-                $result['code'] = 1;
-                $result['msg'] = '';
-            }
-            $result['data'] = $arr;
-        } catch (\Exception $e) {
-            // 如果发送过程中出现异常,记录异常消息到返回结果中
-            $result['msg'] = $e->getMessage();
-        }
-        // 返回发送短信的结果
-        return $result;
-    }
 }
 ```
