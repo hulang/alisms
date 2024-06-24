@@ -21,7 +21,7 @@
     },
     "autoload": {
         "psr-4": {
-            "hulang\\alisms\\": "src/"
+            "hulang\\AliSms\\": "src/"
         },
         "files": [
             "src/helper.php"
