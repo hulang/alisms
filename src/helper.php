@@ -2,11 +2,6 @@
 
 declare(strict_types=1);
 
-namespace hulang\AliSms;
-
-use hulang\AliSms\Client;
-use hulang\AliSms\Request\SendSms;
-
 if (!function_exists('CreateSmsClient')) {
     /**
      * 创建短信客户端,用于发送短信
@@ -37,9 +32,9 @@ if (!function_exists('CreateSmsClient')) {
                 'accessKeySecret' => $keySecret,
             ];
             // 创建短信客户端
-            $client = new Client($config);
+            $client = new \hulang\AliSms\Client($config);
             // 创建发送短信的请求对象
-            $sendSms = new SendSms;
+            $sendSms = new \hulang\AliSms\Request\SendSms;
             // 设置短信发送的手机号码
             $sendSms->setPhoneNumbers($phone);
             // 设置短信签名
